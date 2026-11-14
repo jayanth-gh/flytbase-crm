@@ -1,4 +1,4 @@
-# FlytBase Customer Cockpit
+# FlytBase CRM
 
 A lightweight account-intelligence dashboard for FlytBase customer teams. The Express server serves a responsive browser UI, reads cached CRM data, and refreshes it from the MCP service on a rate-limited schedule.
 

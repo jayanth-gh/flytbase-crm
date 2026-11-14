@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Account CRM</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+    code, pre, .font-mono { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen antialiased selection:bg-blue-100 selection:text-blue-900">
+
+  <!-- Top Navigation Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-xs">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <h1 class="text-xl font-bold tracking-tight text-slate-900">Account CRM</h1>
+        <p class="text-[11px] text-slate-500">Monday brief &bull; Click src: tags for proof</p>
+      </div>
+
+      <div id="sync-status" class="inline-flex items-center gap-2 text-xs font-medium bg-emerald-50 border border-emerald-200 px-3.5 py-1.5 rounded-full text-emerald-800">
+        <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span>Connecting to server cache...</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-6 py-7 space-y-6">
+
+    <!-- Account Switcher & Live Signal Alert Bar -->
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <div id="account-tabs" class="inline-flex flex-wrap gap-2 bg-white p-1.5 rounded-xl border border-slate-200 shadow-xs"></div>
+      <div id="signal-banner" class="text-xs px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 shadow-xs">
+        Live Signals: 0
+      </div>
+    </div>
+
+    <!-- Account Context & Stakeholder Standing Bar -->
+    <section id="account-header" class="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs flex flex-wrap justify-between items-center gap-4 text-xs"></section>
+
+    <!-- 4-Card Executive KPI Strip -->
+    <section id="kpi-strip" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></section>
+
+    <!-- 5 Judge Questions Container -->
+    <div id="questions-container" class="space-y-6"></div>
+
+    <!-- Write Note Back to MCP -->
+    <section class="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
+      <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-100 pb-3">
+        <div>
+          <h2 class="text-sm font-bold uppercase tracking-wider text-slate-900">Log Note</h2>
+        </div>
+        <span class="text-xs font-medium px-2.5 py-1 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
+          1 MCP write / 65s
+        </span>
+      </div>
+
+      <form id="note-form" class="grid grid-cols-1 md:grid-cols-6 gap-3">
+        <select id="note-account" class="bg-slate-50 border border-slate-300 text-slate-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"></select>
+        <select id="note-kind" class="bg-slate-50 border border-slate-300 text-slate-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white">
+          <option value="next_step">next_step</option>
+          <option value="risk">risk</option>
+          <option value="task">task</option>
+          <option value="note">note</option>
+        </select>
+        <input id="note-title" type="text" placeholder="Short title..." class="bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white" required />
+        <input id="note-text" type="text" placeholder="Action, owner, or risk detail..." class="bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400 rounded-lg px-3 py-2 text-sm md:col-span-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white" required />
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold rounded-lg px-4 py-2 text-sm shadow-xs transition cursor-pointer">
+          Queue Note
+        </button>
+      </form>
+
+      <div id="notes-feed" class="space-y-2 text-xs pt-1"></div>
+    </section>
+  </main>
+
+  <!-- Source Trace Inspection Modal -->
+  <div id="source-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4" onclick="if(event.target===this) closeModal()">
+    <div class="bg-white border border-slate-200 rounded-2xl max-w-3xl w-full p-6 space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center border-b border-slate-200 pb-3">
+        <div>
+          <span class="text-[11px] font-semibold uppercase tracking-wider text-blue-600">Raw MCP Evidence Trace</span>
+          <h3 id="modal-title" class="font-bold text-slate-900 text-sm font-mono mt-0.5">Source Verification</h3>
+        </div>
+        <button onclick="closeModal()" class="h-8 w-8 rounded-lg border border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-slate-100 flex items-center justify-center text-lg leading-none transition cursor-pointer">
+          &times;
+        </button>
+      </div>
+      <pre id="modal-body" class="bg-slate-50 border border-slate-200 p-4 rounded-xl text-xs overflow-auto max-h-[68vh] text-slate-800 whitespace-pre-wrap leading-relaxed"></pre>
+    </div>
+  </div>
+
+  <script>
+    let crmState = null;
+    let activeIdx = 0;
+
+    function renderSourcePills(sources) {
+      return (sources || [])
+        .map((src) => {
+          const safe = String(src).replace(/'/g, "\\'");
+          return `<button type="button" onclick="openSource('${safe}')" class="mr-1.5 mt-1.5 inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-mono font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition cursor-pointer">src:${src}</button>`;
+        })
+        .join("");
+    }
+
+    function openSource(sourceKey) {
+      if (!crmState) return;
+      const record = crmState.sourceIndex?.[sourceKey] || { info: "Source ID referenced", sourceKey };
+      document.getElementById("modal-title").textContent = sourceKey;
+      document.getElementById("modal-body").textContent =
+        typeof record === "string" ? record : JSON.stringify(record, null, 2);
+      document.getElementById("source-modal").classList.remove("hidden");
+    }
+
+    function closeModal() {
+      document.getElementById("source-modal").classList.add("hidden");
+    }
+
+    function standingColor(standing) {
+      const s = String(standing || "").toLowerCase();
+      if (s === "ally") return "bg-emerald-50 text-emerald-800 border-emerald-200";
+      if (s === "warm") return "bg-sky-50 text-sky-800 border-sky-200";
+      if (s === "guarded") return "bg-rose-50 text-rose-800 border-rose-200";
+      return "bg-slate-100 text-slate-700 border-slate-200";
+    }
+
+    function severityStyle(sev) {
+      const s = String(sev || "").toUpperCase();
+      if (s.includes("LIVE")) return { card: "border-amber-300 bg-amber-50/40", badge: "bg-amber-100 text-amber-900 border-amber-300" };
+      if (s === "CRITICAL") return { card: "border-rose-200 bg-rose-50/35", badge: "bg-rose-100 text-rose-800 border-rose-200" };
+      if (s === "HIGH") return { card: "border-orange-200 bg-orange-50/30", badge: "bg-orange-100 text-orange-800 border-orange-200" };
+      return { card: "border-slate-200 bg-slate-50/60", badge: "bg-slate-100 text-slate-700 border-slate-200" };
+    }
+
+    function renderDashboard(data) {
+      crmState = data;
+      const m = data.meta || {};
+      document.getElementById("sync-status").innerHTML = `
+        <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span>Live Cache Active &bull; Next Sync: <strong>${m.nextMcpSyncInSec}s</strong> &bull; Signals: <strong>${m.signalCount}</strong> &bull; Queued Writes: <strong>${m.pendingWrites}</strong></span>
+      `;
+
+      const sigEl = document.getElementById("signal-banner");
+      if (m.signalCount > 0) {
+        const latest = data.signals[data.signals.length - 1];
+        sigEl.className = "text-xs px-3.5 py-2 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 font-medium shadow-xs";
+        sigEl.innerHTML = `<span class="font-bold uppercase tracking-wide text-amber-700 mr-1.5">Live Signal (${m.signalCount}):</span>${latest.title || latest.summary || JSON.stringify(latest).slice(0, 95)}`;
+      } else {
+        sigEl.className = "text-xs px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-500 shadow-xs";
+        sigEl.textContent = "Live Signals: Polling every 65s (0 new events)";
+      }
+
+      const accounts = data.accounts || [];
+      const tabsEl = document.getElementById("account-tabs");
+      tabsEl.innerHTML = accounts
+        .map(
+          (a, idx) => `
+          <button onclick="activeIdx=${idx}; renderDashboard(crmState)"
+            class="px-4 py-2 rounded-lg text-sm font-semibold transition cursor-pointer ${
+              idx === activeIdx
+                ? "bg-blue-600 text-white shadow-xs"
+                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+            }">
+            Account ${a.id}: ${a.name}
+          </button>`
+        )
+        .join("");
+
+      const noteAccSelect = document.getElementById("note-account");
+      if (noteAccSelect.options.length !== accounts.length) {
+        noteAccSelect.innerHTML = accounts
+          .map((a) => `<option value="${a.id}">Account ${a.id}: ${a.name}</option>`)
+          .join("");
+      }
+
+      const acc = accounts[activeIdx];
+      if (!acc) return;
+
+      // Account Story & Stakeholder Standing Pills
+      document.getElementById("account-header").innerHTML = `
+        <div class="max-w-2xl">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">Official Account Brief</span>
+          <span class="text-sm font-medium text-slate-800">${acc.officialStory}</span>
+        </div>
+        <div class="flex flex-wrap gap-2 items-center">
+          ${acc.stakeholders
+            .map(
+              (s) =>
+                `<span class="px-3 py-1 rounded-full border font-medium ${standingColor(s.relationship)}">${s.name} &bull; <strong class="capitalize">${s.relationship}</strong></span>`
+            )
+            .join("")}
+        </div>
+      `;
+
+      // 4-Card Executive KPI Strip
+      document.getElementById("kpi-strip").innerHTML = `
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
+          <div class="text-xs font-semibold uppercase tracking-wider text-slate-400">Backed Book Value</div>
+          <div class="text-2xl font-extrabold text-emerald-700 mt-1">${acc.symbol}${acc.q1.backedTotal.toLocaleString()}</div>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
+          <div class="text-xs font-semibold uppercase tracking-wider text-slate-400">Unbacked / Open Offers</div>
+          <div class="text-2xl font-extrabold text-amber-700 mt-1">${acc.symbol}${acc.q1.unbackedTotal.toLocaleString()}</div>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
+          <div class="text-xs font-semibold uppercase tracking-wider text-slate-400">Active Fleet Telemetry</div>
+          <div class="text-2xl font-extrabold text-slate-900 mt-1">${acc.telemetrySummary.activeDocksCount} <span class="text-base font-semibold text-slate-400">/ ${acc.telemetrySummary.totalDocks} docks</span></div>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
+          <div class="text-xs font-semibold uppercase tracking-wider text-slate-400">Active Risks & Signals</div>
+          <div class="text-2xl font-extrabold text-rose-700 mt-1">${acc.q4.length} <span class="text-base font-semibold text-slate-400">alerts</span></div>
+        </div>
+      `;
+
+      // Main 5 Questions Layout
+      document.getElementById("questions-container").innerHTML = `
+        <!-- Q1: What is the book worth? -->
+        <section class="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-5">
+          <div class="flex flex-wrap justify-between items-center gap-3 border-b border-slate-100 pb-4">
+            <div class="flex items-center gap-3">
+              <span class="h-7 w-7 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 font-mono font-bold text-xs flex items-center justify-center">01</span>
+              <h2 class="text-base font-extrabold text-slate-900">1. Book Worth</h2>
+            </div>
+            <div class="flex flex-wrap gap-2.5 text-xs">
+              <span class="px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold">
+                Backed: ${acc.symbol}${acc.q1.backedTotal.toLocaleString()}
+              </span>
+              <span class="px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 font-bold">
+                Apart: ${acc.symbol}${acc.q1.unbackedTotal.toLocaleString()}
+              </span>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-5 text-xs">
+            <div class="bg-emerald-50/35 p-4 rounded-xl border border-emerald-200/80 space-y-3">
+              <div class="font-bold text-emerald-800 uppercase tracking-wider flex items-center justify-between">
+                <span>Backed Pipeline & Agreed Deals</span>
+                <span class="text-[11px] font-medium text-emerald-700">Evidence-Verified</span>
+              </div>
+              ${acc.q1.backedItems
+                .map(
+                  (item) => `
+                <div class="bg-white p-3.5 rounded-xl border border-emerald-200/70 shadow-2xs space-y-1">
+                  <div class="flex justify-between items-start gap-2 font-bold text-slate-900 text-sm">
+                    <span>${item.title}</span>
+                    <span class="text-emerald-700 font-mono shrink-0">${acc.symbol}${Number(item.value).toLocaleString()}</span>
+                  </div>
+                  <div class="text-slate-600 leading-relaxed"><strong class="text-slate-800">${item.category}:</strong> ${item.backingNote}</div>
+                  <div>${renderSourcePills(item.sources)}</div>
+                </div>`
+                )
+                .join("")}
+            </div>
+
+            <div class="bg-amber-50/35 p-4 rounded-xl border border-amber-200/80 space-y-3">
+              <div class="font-bold text-amber-900 uppercase tracking-wider flex items-center justify-between">
+                <span>Shown Apart: Unbacked Claims & Open Offers</span>
+                <span class="text-[11px] font-medium text-amber-700">Excluded from Committed Book</span>
+              </div>
+              ${acc.q1.unbackedItems
+                .map(
+                  (item) => `
+                <div class="bg-white p-3.5 rounded-xl border border-amber-200/70 shadow-2xs space-y-1">
+                  <div class="flex justify-between items-start gap-2 font-bold text-slate-900 text-sm">
+                    <span>${item.title}</span>
+                    <span class="text-amber-700 font-mono shrink-0">${item.value ? acc.symbol + Number(item.value).toLocaleString() : "Unquantified"}</span>
+                  </div>
+                  <div class="text-slate-600 leading-relaxed"><strong class="text-amber-900">${item.category}:</strong> ${item.reason}</div>
+                  <div>${renderSourcePills(item.sources)}</div>
+                </div>`
+                )
+                .join("")}
+            </div>
+          </div>
+        </section>
+
+        <!-- Q2: Who holds the power? -->
+        <section class="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
+          <div class="flex items-center gap-3 border-b border-slate-100 pb-3.5">
+            <span class="h-7 w-7 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 font-mono font-bold text-xs flex items-center justify-center">02</span>
+            <h2 class="text-base font-extrabold text-slate-900">2. Power Map</h2>
+          </div>
+
+          <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+            ${acc.q2
+              .map(
+                (card) => `
+              <div class="bg-slate-50/80 p-4 rounded-xl border border-slate-200 space-y-2.5 flex flex-col justify-between">
+                <div class="space-y-2">
+                  <div class="font-bold text-slate-900 text-sm border-b border-slate-200 pb-2">${card.dealTitle}</div>
+                  <div class="leading-relaxed"><span class="inline-block w-16 font-bold text-blue-700">Decides:</span> <span class="text-slate-700">${card.decides}</span></div>
+                  <div class="leading-relaxed"><span class="inline-block w-16 font-bold text-emerald-700">Pays:</span> <span class="text-slate-700">${card.pays}</span></div>
+                  <div class="leading-relaxed"><span class="inline-block w-16 font-bold text-slate-700">Uses:</span> <span class="text-slate-700">${card.uses}</span></div>
+                  <div class="leading-relaxed"><span class="inline-block w-16 font-bold text-rose-700">Blocks:</span> <span class="text-slate-700">${card.blocks}</span></div>
+                </div>
+                <div class="pt-1">${renderSourcePills(card.sources)}</div>
+              </div>`
+              )
+              .join("")}
+          </div>
+        </section>
+
+        <!-- Q3: What do you do first? -->
+        <section class="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
+          <div class="flex items-center gap-3 border-b border-slate-100 pb-3.5">
+            <span class="h-7 w-7 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 font-mono font-bold text-xs flex items-center justify-center">03</span>
+            <h2 class="text-base font-extrabold text-slate-900">3. First 3 Moves</h2>
+          </div>
+
+          <div class="space-y-3 text-xs">
+            ${acc.q3
+              .map(
+                (move) => `
+              <div class="bg-slate-50/80 p-4 rounded-xl border border-slate-200 flex flex-wrap justify-between items-start gap-4">
+                <div class="space-y-1.5 max-w-2xl">
+                  <div class="flex items-center gap-2.5">
+                    <span class="px-2 py-0.5 rounded-md bg-blue-600 text-white font-mono font-bold text-xs">RANK #${move.rank}</span>
+                    <span class="text-sm font-bold text-slate-900">${move.title}</span>
+                  </div>
+                  <div class="text-slate-600">Target Deal: <strong class="text-slate-800">${move.deal}</strong></div>
+                  <div>${renderSourcePills(move.sources)}</div>
+                </div>
+                <div class="flex flex-col sm:items-end gap-1.5 shrink-0">
+                  <span class="px-3 py-1 rounded-lg bg-white border border-slate-200 text-slate-700">
+                    Owner: <strong class="text-slate-900">${move.owner}</strong>
+                  </span>
+                  <span class="px-3 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-900">
+                    Due: <strong>${move.due}</strong>
+                  </span>
+                </div>
+              </div>`
+              )
+              .join("")}
+          </div>
+        </section>
+
+        <!-- Q4 & Q5 Grid -->
+        <div class="grid md:grid-cols-2 gap-6">
+          <!-- Q4: What is about to go wrong? -->
+          <section class="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
+            <div class="flex items-center gap-3 border-b border-slate-100 pb-3.5">
+              <span class="h-7 w-7 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 font-mono font-bold text-xs flex items-center justify-center">04</span>
+              <h2 class="text-base font-extrabold text-slate-900">4. What's at Risk</h2>
+            </div>
+
+            <div class="space-y-3 text-xs">
+              ${acc.q4
+                .map((risk) => {
+                  const st = severityStyle(risk.severity);
+                  return `
+                  <div class="p-4 rounded-xl border ${st.card} space-y-1.5">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                      <span class="font-bold text-slate-900 text-sm">${risk.title}</span>
+                      <span class="px-2 py-0.5 rounded-md border font-mono font-bold text-[10px] uppercase ${st.badge}">${risk.severity}</span>
+                    </div>
+                    <div class="text-rose-800 font-semibold">Turns bad: ${risk.whenItTurnsBad}</div>
+                    <div class="text-slate-600 leading-relaxed">${risk.detail}</div>
+                    <div>${renderSourcePills(risk.sources)}</div>
+                  </div>`;
+                })
+                .join("")}
+            </div>
+          </section>
+
+          <!-- Q5: What do you still not know? -->
+          <section class="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
+            <div class="flex items-center gap-3 border-b border-slate-100 pb-3.5">
+              <span class="h-7 w-7 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 font-mono font-bold text-xs flex items-center justify-center">05</span>
+              <h2 class="text-base font-extrabold text-slate-900">5. Open Gaps</h2>
+            </div>
+
+            <div class="space-y-3 text-xs">
+              ${acc.q5
+                .map(
+                  (g) => `
+                <div class="bg-slate-50/80 p-4 rounded-xl border border-slate-200 space-y-1.5">
+                  <div class="font-bold text-slate-900 text-sm">${g.gap}</div>
+                  <div class="text-slate-600 leading-relaxed"><strong class="text-slate-800">Why it matters:</strong> ${g.whyItMatters}</div>
+                  <div class="text-blue-800 font-medium"><strong class="text-blue-950">Who to ask:</strong> ${g.whoToAsk}</div>
+                  <div>${renderSourcePills(g.sources)}</div>
+                </div>`
+                )
+                .join("")}
+            </div>
+          </section>
+        </div>
+      `;
+
+      // Notes Feed
+      document.getElementById("notes-feed").innerHTML =
+        (data.notes || [])
+          .slice(0, 8)
+          .map(
+            (n) => `
+          <div class="bg-slate-50 px-3.5 py-2.5 rounded-xl border border-slate-200 flex justify-between items-center gap-3">
+            <div class="text-slate-700">
+              <span class="px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-mono font-semibold mr-1.5">${n.kind || "note"}</span>
+              <strong class="text-slate-900">${n.title || ""}:</strong> ${n.text || JSON.stringify(n)}
+            </div>
+            <span class="text-slate-400 font-mono text-[11px] shrink-0">${n.account ? "Account " + n.account : ""}</span>
+          </div>`
+          )
+          .join("") ||
+        `<div class="text-slate-400 italic py-1">No notes written yet. Submit a next step or risk above to queue a write_note call.</div>`;
+    }
+
+    document.getElementById("note-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const account = document.getElementById("note-account").value;
+      const kind = document.getElementById("note-kind").value;
+      const title = document.getElementById("note-title").value;
+      const text = document.getElementById("note-text").value;
+      await fetch("/api/notes", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ account, kind, title, text }),
+      });
+      document.getElementById("note-title").value = "";
+      document.getElementById("note-text").value = "";
+      pollCrm();
+    });
+
+    async function pollCrm() {
+      const res = await fetch("/api/crm");
+      const data = await res.json();
+      renderDashboard(data);
+    }
+
+    pollCrm();
+    setInterval(pollCrm, 5000);
+  </script>
+</body>
+</html>
